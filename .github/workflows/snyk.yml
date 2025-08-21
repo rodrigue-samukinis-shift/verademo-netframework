@@ -1,6 +1,7 @@
 name: Snyk Security Scan
 
 on: [push, pull_request]
+
 jobs:
   snyk:
     runs-on: ubuntu-latest
