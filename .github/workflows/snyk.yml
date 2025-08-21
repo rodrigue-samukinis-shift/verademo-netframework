@@ -1,21 +1,40 @@
-name: Snyk Security Scan
+name: Snyk .NET Security Scan
 
-on: [push, pull_request]
+on:
+  push:
+    branches:
+      - main
+  pull_request:
 
 jobs:
   snyk:
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v3
-      - name: Set up Node.js
-        uses: actions/setup-node@v3
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v3
         with:
-          node-version: '18'
-      - run: |
-            npm install
-            npm install -g snyk
-        shell: bash
-      - run: |
-            snyk auth ${{ secrets.SNYK_TOKEN }}
-            snyk test
-        shell: bash
+          dotnet-version: '7.0.x'  # adapte à ta version
+
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Build solution
+        run: dotnet build --no-restore --configuration Release
+
+      - name: Install Snyk CLI
+        run: |
+          curl -sL https://static.snyk.io/cli/latest/linux/static/snyk-linux -o snyk
+          chmod +x snyk
+          sudo mv snyk /usr/local/bin/snyk
+
+      - name: Authenticate Snyk
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        run: snyk auth $SNYK_TOKEN
+
+      - name: Run Snyk test
+        run: snyk test --all-projects
